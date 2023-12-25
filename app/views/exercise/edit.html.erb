@@ -1,0 +1,59 @@
+<div id="update-exercise">
+    <h3>Редактирование упражнения</h3>
+    <div class="my_form">
+        <%= form_for @exercise, url: exercise_path(@exercise), method: :patch do |form| %>
+            <div class="form-group">
+                <%= form.label :exercise_types_id, 'Тип упражнения' %>
+                <%= form.select :exercise_types_id, @exercise_types, {}, { class: 'form-control' } %>
+            </div>
+
+            <div id="update-sets-container"></div>
+
+            <%= link_to 'Добавить подход', '#', id: 'update-add-set-btn', class: 'btn btn-primary' %>
+            <%= link_to 'Удалить', '#', id: 'update-remove-last-set-btn', class: 'btn btn-danger' %>
+
+            <div class="form-group">
+                <%= form.label :comments, 'Комментарии' %>
+                <%= form.text_area :comments, class: 'form-control', rows: 3 %>
+            </div>
+
+            <%= form.submit 'Сохранить', id: "update-submit_button", class: "btn btn-primary" %>
+        <% end %>
+    </div>
+</div>
+
+<script id="update-sets-control-script">
+    console.log("update-sets-control-script loaded")
+
+    var updateSetCount = 0;
+    var updateSetsContainer = document.getElementById('update-sets-container');
+    var updateAddSetBtn = document.getElementById('update-add-set-btn');
+    var updateRemoveLastSetBtn = document.getElementById('update-remove-last-set-btn');
+    updateSetCount = 0;
+
+    updateAddSetBtn.addEventListener('click', function(event) {
+      event.preventDefault();
+      var updateNewSetForm = document.createElement('div');
+      updateNewSetForm.innerHTML = `
+        <div class="form-group set-group">
+          <label for="_sets_${updateSetCount}_weight">Вес</label>
+          <input class="form-control" type="text" name="sets[${updateSetCount}][weight]">
+
+          <label for="_sets_${updateSetCount}_reps">Количество повторений</label>
+          <input class="form-control" type="text" name="sets[${updateSetCount}][reps]">
+        </div>
+      `;
+
+      updateSetsContainer.appendChild(updateNewSetForm);
+      updateSetCount++;
+    });
+
+    updateRemoveLastSetBtn.addEventListener('click', function(event) {
+      event.preventDefault();
+      var updateLastSet = updateSetsContainer.lastElementChild;
+      if (updateLastSet) {
+        updateLastSet.remove();
+        updateSetCount--;
+      }
+    });
+</script>

@@ -1,0 +1,157 @@
+<h1>Новости пользователей</h1>
+
+<div class="col-10">
+    <div class="my_form" id="posts_div"></div>
+</div>
+
+<script>
+    var postsJson = JSON.parse('<%= raw @news.to_json %>');
+    console.log(JSON.stringify(postsJson, 2, false));
+
+    // строка, содержащая массив, содержащий пары значений: [id тренировки, дата тренировки]
+    var workoutByDateString = '<%= raw @workout_by_date_list.to_json %>';
+    
+    // создание json вида {id: дата} из строки
+    var workoutByDateJson = {};
+    JSON.parse(workoutByDateString).forEach((pair) => {
+        workoutByDateJson[pair[0]] = pair[1];
+    });
+    console.log(workoutByDateJson);
+
+    // получение данных о тренировке для выбранной даты
+    function getWorkoutData() {
+        // блок, в котором будут размещены блоки тренировок
+        var postsDiv = document.getElementById('posts_div');
+        if (postsJson.length == 0) {
+            postsDiv.innerHTML = `<h3>Нет недавних публикаций</h3>`;
+        } else {
+            postsDiv.innerHTML = ``;
+        }
+
+        // функция для выполнения одного AJAX-запроса
+        function fetchWorkoutData(id) {
+            // возвращаем новый промис, который выполняет ajax запрос с указанным id
+            return new Promise((resolve, reject) => {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', `/workout/${encodeURIComponent(id)}.json`, true);
+
+                xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    var responseData = JSON.parse(xhr.responseText);
+                    resolve(responseData); // успех - возвращаем полученные от сервера данные
+                } else {
+                    reject(xhr.statusText); // неудача - возвращаем статус запроса
+                }
+                };
+
+                xhr.onerror = function() {
+                reject('Request failed');
+                };
+
+                xhr.send();
+            });
+        }
+
+        // функция для выполнения последовательных AJAX-запросов
+        function fetchWorkoutDataSequentially(posts) {
+            // первый промис в цепочке, автоматически возвращается resolve
+            var promiseChain = Promise.resolve();            
+
+            // для каждого id из массива выполняется цепочка промисов
+            posts.forEach((post) => {
+                // первый промис автоматически возвращает resolve => выполняется then
+                promiseChain = promiseChain.then(() => {
+                    return fetchWorkoutData(post.workouts_id); // выполняем ajax запрос
+                // дальше ловим resolve и reject промиса, выполняющего ajax запрос
+                }).then((responseData) => {
+                    // действия в случае успешного получения данных с сервера
+                    console.log('Success', responseData); 
+                    
+                    // переменная, хранящая блок с одной тренировкой
+                    var workoutDiv = document.createElement('div');
+                    workoutDiv.classList.add("my_form");
+                    
+                    // получаем email текущего юзера (автора поста)
+                    var xhrGetEmail = new XMLHttpRequest();
+                    xhrGetEmail.open('GET', `/user/get_email.json?id=${encodeURIComponent(post.users_id)}`, true);
+
+                    xhrGetEmail.onload = function() {
+                        var currentUserEmail = JSON.parse(xhrGetEmail.responseText);
+                        console.log(currentUserEmail);
+
+                        workoutDiv.innerHTML += `<h4>${post.date} пользователь ${currentUserEmail.email} поделился результатами
+                        тренировки ${workoutByDateJson[post.workouts_id]}</h4>`;
+
+                        // переменная, хранящая упражнение в каждой итерации цикла
+                        var currentExerciseDiv;
+                        var currentExerciseNameDiv;
+                        var currentWorkoutButtonGroup;
+
+                        // добавляем в workoutDiv блоки currentExerciseDiv с данными о каждом упражнении
+                        for (let i = 0; i < responseData.length; i++) {
+                            // создаем новый блок для упражнения
+                            currentExerciseDiv = document.createElement('div');
+                            
+                            currentExerciseNameDiv = document.createElement('div');
+                            currentExerciseNameDiv.classList.add("my_form");
+
+                            currentExerciseNameDiv.innerHTML += `
+                            <b>Упражнение ${i + 1}: </b>${responseData[i].exercise_type_name}`;
+
+                            if (responseData[i].exercise_type_description != '') {
+                                currentExerciseNameDiv.innerHTML += ` (${responseData[i].exercise_type_description})`;
+                            }
+
+                            currentExerciseDiv.appendChild(currentExerciseNameDiv);
+
+                            for (let set_number in responseData[i].sets) {
+                                let set_data = responseData[i].sets[set_number];
+                                currentExerciseDiv.innerHTML += `
+                                    <div>Подход ${Number(set_number) + 1}: ${responseData[i].sets[set_number].weight}кг ${responseData[i].sets[set_number].reps}раз</div>`;
+                            }
+
+                            if (responseData[i].comments != "") {
+                                currentExerciseDiv.innerHTML += `
+                                <div class="comments">Комментарии: ${responseData[i].comments}</div>
+                                `;
+                            }
+
+                            // добавление упражнения в блок тренировки
+                            workoutDiv.appendChild(currentExerciseDiv);
+                        }
+
+                        // кнопка удаления добавляется только для своих постов
+                        if (post.users_id == '<%= current_user.id %>') {
+                            // добавление в конце каждой тренировки кнопок изменения и удаления
+                            currentWorkoutButtonGroup = document.createElement('div');
+                            currentWorkoutButtonGroup.classList.add("btn-group");
+                            currentWorkoutButtonGroup.classList.add("my_btn_group");
+
+                            // кнопка удаления
+                            currentWorkoutButtonGroup.innerHTML += `
+                                <form class="button_to" method="delete" action="/post/${post.id}">
+                                    <button class="btn btn-danger my_horizontal_btn_group" type="submit">Удалить</button>
+                                </form>
+                            `;
+                                
+                            workoutDiv.appendChild(currentWorkoutButtonGroup);
+                        }
+
+                        // добавление тренировки в блок тренировок
+                        postsDiv.appendChild(workoutDiv);
+                      };
+
+                    xhrGetEmail.send();
+                }).catch((error) => {
+                // ловим ошибку
+                console.error('Error:', error);
+                });
+            });
+        }
+
+        // запускаем запросы для всех тренировок, id которых получили по заданной дате
+        fetchWorkoutDataSequentially(postsJson);
+    }
+
+    getWorkoutData();
+</script>

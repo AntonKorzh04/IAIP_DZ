@@ -1,0 +1,13 @@
+<h1>Edit Exercise</h1>
+
+<div class="col-4">
+  <div class="my_form">
+    <%= form_for @exercise, url: exercise_type_path(@exercise), method: :patch, class: "my_form", id: "my_form" do |f| %>
+      <div class="form-group">
+        <%= f.text_field :name, class: "form-control", placeholder: "Название" %>
+        <%= f.text_field :description, class: "form-control", placeholder: "Описание" %>
+      </div>
+      <%= f.submit 'Сохранить', id: "submit_button", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,8 @@
+Layout/IndentationWidth:
+  Width: 4
+
+Layout/LineLength:
+  Max: 134
+
+AllCops:
+  NewCops: enable

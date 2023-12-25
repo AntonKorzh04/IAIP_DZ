@@ -1,0 +1,37 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-primary">
+  <div class="container">
+    <%= link_to 'FitLog Pro', info_about_path, class: 'navbar-brand' %>
+
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item <%= 'active' if current_page?(root_path) %>">
+          <%= link_to 'Моя страница', root_path, class: 'nav-link' %>
+        </li>
+
+        <li class="nav-item <%= 'active' if current_page?(info_news_path) %>">
+          <%= link_to 'Новости', info_news_path, class: 'nav-link' %>
+        </li>
+        
+        <li class="nav-item <%= 'active' if current_page?(new_exercise_type_path) %>">
+          <%= link_to 'Новое упражнение', new_exercise_type_path, class: 'nav-link' %>
+        </li>
+        
+        <li class="nav-item <%= 'active' if current_page?(exercise_type_index_path) %>">
+          <%= link_to 'Мои упражнения', exercise_type_index_path, class: 'nav-link' %>
+        </li>
+
+        <li class="nav-item <%= 'active' if current_page?(new_workout_path) %>">
+          <%= link_to 'Новая тренировка', new_workout_path, class: 'nav-link' %>
+        </li>
+        
+        <li class="nav-item <%= 'active' if current_page?(workout_index_path) %>">
+          <%= link_to 'Мои тренировки', workout_index_path, class: 'nav-link' %>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

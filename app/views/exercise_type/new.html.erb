@@ -1,0 +1,12 @@
+<h1>Новое упражнение</h1>
+
+<div class="col-4">
+    <%= form_tag(exercise_type_index_path, {method: "post", class: "my_form", id: "my_form"}) do %>
+        <div class="form-group">
+            <%= text_field_tag (:name),"", class: "form-control", placeholder: "Название" %>
+            <%= text_field_tag (:description),"", class: "form-control", placeholder: "Описание" %>
+        </div>
+        <%= submit_tag('Сохранить',  id: "submit_button", class: "btn btn-primary") %>
+    <% end %>
+</div>
+

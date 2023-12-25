@@ -1,0 +1,488 @@
+<h1>Мои тренировки</h1>
+
+<div class="row">
+  <div class="col-4">
+    <div class="calendar"></div>
+  </div>
+  
+  <div class="col-4" id="workouts"></div>
+</div>
+
+<script>
+  console.log('index.html.erb loaded');
+
+  // строка, содержащая массив, содержащий пары значений: [id тренировки, дата тренировки]
+  var workoutByDateString = '<%= raw @workout_by_date_list.to_json %>';
+  console.log(JSON.parse(workoutByDateString));
+  
+  function CalendarControl() {
+      // текущая дата
+      const calendar = new Date();
+      
+      // сам календарь
+      const calendarControl = {
+          // текущая дата
+          localDate: new Date(),
+
+          // последний день предыдущего месяца
+          prevMonthLastDate: null,
+
+          // названия дней недели
+          // calWeekDays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+          // новый вариант, чтобы неделя начиналась нормально с понедельника
+          calWeekDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+
+          // названия месяцев
+          calMonthName: [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+          
+          // количество дней в месяце
+          daysInMonth: function (month, year) {
+              return new Date(year, month, 0).getDate();
+          },
+
+          // объект Date первого дня текущего месяца
+          firstDay: function () {
+              return new Date(calendar.getFullYear(), calendar.getMonth(), 1);
+          },
+
+          // объект Date последнего дня текущего месяца
+          lastDay: function () {
+              return new Date(calendar.getFullYear(), calendar.getMonth() + 1, 0);
+          },
+
+          // номер дня недели первого дня текущего месяца
+          firstDayNumber: function () {
+            // return calendarControl.firstDay().getDay() + 1;
+            // новый вариант, чтобы неделя начиналась нормально с понедельника
+            return calendarControl.firstDay().getDay();
+          },
+
+          // номер дня недели последнего дня текущего месяца
+          lastDayNumber: function () {
+            // return calendarControl.lastDay().getDay() + 1;
+            // новый вариант, чтобы неделя начиналась нормально с понедельника
+            return calendarControl.lastDay().getDay();
+          },
+
+          // последний день предыдущего месяца
+          getPreviousMonthLastDate: function () {
+              let lastDate = new Date(calendar.getFullYear(), calendar.getMonth(), 0).getDate();
+              return lastDate;
+          },
+
+          // меняет месяц на предыдущий и обновляет интерфейс
+          navigateToPreviousMonth: function (event) {
+              event.preventDefault(); // предотвращаем выполнение действия по умолчанию (переход по ссылке)
+              calendar.setMonth(calendar.getMonth() - 1);
+              calendarControl.attachEventsOnNextPrev();
+          },
+
+          // меняет месяц на следующий и обновляет интерфейс
+          navigateToNextMonth: function (event) {
+              event.preventDefault(); // предотвращаем выполнение действия по умолчанию (переход по ссылке)
+              calendar.setMonth(calendar.getMonth() + 1);
+              calendarControl.attachEventsOnNextPrev();
+          },
+
+          // меняет месяц на текущий и обновляет интерфейс
+          navigateToCurrentMonth: function () {
+              let currentMonth = calendarControl.localDate.getMonth();
+              let currentYear = calendarControl.localDate.getFullYear();
+              calendar.setMonth(currentMonth);
+              calendar.setYear(currentYear);
+              calendarControl.attachEventsOnNextPrev();
+          },
+
+          // отображение текущего года в интерфейсе
+          displayYear: function () {
+              let yearLabel = document.querySelector(".calendar .calendar-year-label");
+              yearLabel.innerHTML = calendar.getFullYear();
+          },
+
+          // отображение текущего месяца в интерфейсе
+          displayMonth: function () {
+              let monthLabel = document.querySelector(".calendar .calendar-month-label");
+              monthLabel.innerHTML = calendarControl.calMonthName[calendar.getMonth()];
+          },
+
+          // обработчик события выбора даты, возвразает выбранную дату
+          selectDate: function (event) {
+              event.preventDefault();
+              
+              // формирование выбранной даты в формате "ГГ-ММ-ДД"
+              let selectedTextContent =  `${event.target.textContent}`.trim() // выбранное число
+              let selectedDate = `${calendar.getFullYear()}-${calendar.getMonth()+1}-${selectedTextContent}`;
+              console.log(`Selected date: ${selectedDate}`);
+
+              calendarControl.getWorkoutData(selectedDate);
+          },
+          
+          // получение данных о тренировке для выбранной даты
+          getWorkoutData: function(workoutDate) {
+              // из jsonа c id и датами тренировок выбирем id, соответствующие выбранному числу, и помещяем в массив matchingIds
+              let filteredArray = JSON.parse(workoutByDateString).filter(function (item) {
+                  return item[1] === workoutDate && item[2] === Number('<%= current_user.id %>');
+              });
+
+              // Сформировать результирующий массив из значений первого поля
+              var matchingIds = filteredArray.map(function (item) {
+                return item[0];
+              });
+              console.log(`IDs matching to selected date: ${matchingIds}`);
+              
+              // блок, в котором будут размещены блоки тренировок
+              var workoutsDiv = document.getElementById('workouts');
+              if (matchingIds.length == 0) {
+                workoutsDiv.innerHTML = `<h3>${workoutDate} тренировок не было</h3>`;
+              } else {
+                workoutsDiv.innerHTML = ``;
+              }
+
+              // функция для выполнения одного AJAX-запроса
+              function fetchWorkoutData(workouts_id) {
+                // возвращаем новый промис, который выполняет ajax запрос с указанным id
+                return new Promise((resolve, reject) => {
+                  var xhr = new XMLHttpRequest();
+                  xhr.open('GET', `/workout/${encodeURIComponent(workouts_id)}.json`, true);
+
+                  xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                      var responseData = JSON.parse(xhr.responseText);
+                      resolve(responseData); // успех - возвращаем полученные от сервера данные
+                    } else {
+                      reject(xhr.statusText); // неудача - возвращаем статус запроса
+                    }
+                  };
+
+                  xhr.onerror = function() {
+                    reject('Request failed');
+                  };
+
+                  xhr.send();
+                });
+              }
+
+              // функция для выполнения последовательных AJAX-запросов
+              function fetchWorkoutDataSequentially(ids) {
+                // первый промис в цепочке, автоматически возвращается resolve
+                var promiseChain = Promise.resolve();
+                
+                // для каждого id из массива выполняется цепочка промисов
+                ids.forEach((workouts_id) => {
+                  // первый промис автоматически возвращает resolve => выполняется then
+                  promiseChain = promiseChain.then(() => {
+                    return fetchWorkoutData(workouts_id); // выполняем ajax запрос
+                    // дальше ловим resolve и reject промиса, выполняющего ajax запрос
+                  }).then((responseData) => {
+                    // действия в случае успешного получения данных с сервера
+                    console.log('Success', responseData); 
+                    
+                    // переменная, хранящая блок с одной тренировкой
+                    var workoutDiv = document.createElement('div');
+                    workoutDiv.classList.add("my_form");
+
+                    // переменная, хранящая упражнение в каждой итерации цикла
+                    var currentExerciseDiv;
+                    var currentExerciseNameDiv;
+                    var currentWorkoutButtonGroup;
+
+                    // добавляем в workoutDiv блоки currentExerciseDiv с данными о каждом упражнении
+                    for (let i = 0; i < responseData.length; i++) {
+                        // создаем новый блок для упражнения
+                        currentExerciseDiv = document.createElement('div');
+                        
+                        currentExerciseNameDiv = document.createElement('div');
+                        currentExerciseNameDiv.classList.add("my_form");
+
+                        currentExerciseNameDiv.innerHTML += `
+                        <b>Упражнение ${i + 1}: </b>${responseData[i].exercise_type_name}`;
+
+                        if (responseData[i].exercise_type_description != '') {
+                            currentExerciseNameDiv.innerHTML += ` (${responseData[i].exercise_type_description})`;
+                        }
+
+                        currentExerciseDiv.appendChild(currentExerciseNameDiv);
+
+                        for (let set_number in responseData[i].sets) {
+                            let set_data = responseData[i].sets[set_number];
+                            currentExerciseDiv.innerHTML += `
+                                <div>Подход ${Number(set_number) + 1}: ${responseData[i].sets[set_number].weight}кг ${responseData[i].sets[set_number].reps}раз</div>`;
+                        }
+
+                        if (responseData[i].comments != "") {
+                            currentExerciseDiv.innerHTML += `
+                            <div class="comments">Комментарии: ${responseData[i].comments}</div>
+                            `;
+                        }
+
+                        // добавление упражнения в блок тренировки
+                        workoutDiv.appendChild(currentExerciseDiv);
+                    }
+
+                    // добавление в конце каждой тренировки кнопок изменения и удаления
+                    currentWorkoutButtonGroup = document.createElement('div');
+                    currentWorkoutButtonGroup.classList.add("btn-group");
+                    currentWorkoutButtonGroup.classList.add("my_btn_group");
+                    
+                    // кнопка изменения
+                    currentWorkoutButtonGroup.innerHTML += `
+                        <form class="button_to" method="get" action="/workout/${workouts_id}/edit">
+                            <button class="btn btn-primary my_horizontal_btn_group" type="submit">Изменить</button>
+                        </form>
+                    `;
+
+                    // кнопка удаления
+                    currentWorkoutButtonGroup.innerHTML += `
+                        <form class="button_to" method="delete" action="/workout/${workouts_id}">
+                            <button class="btn btn-danger my_horizontal_btn_group" type="submit">Удалить</button>
+                        </form>
+                    `;
+                    
+                    currentWorkoutButtonGroup.innerHTML += `
+                        <form class="button_to" method="post" action="/post">
+                            <input name="users_id" value="${'<%= current_user.id %>'}" hidden>
+                            <input name="workouts_id" value="${workouts_id}" hidden>
+                            <button class="btn btn-success my_horizontal_btn_group" type="submit">Поделиться</button>
+                        </form>
+                    `;
+                       
+                    workoutDiv.appendChild(currentWorkoutButtonGroup);
+
+                    // добавление тренировки в блок тренировок
+                    workoutsDiv.innerHTML += `<h3>Тренировка ${workoutDate}</h3>`;
+                    workoutsDiv.appendChild(workoutDiv);
+                  }).catch((error) => {
+                    // ловим ошибку
+                    console.error('Error:', error);
+                  });
+                });
+              }
+
+              // запускаем запросы для всех тренировок, id которых получили по заданной дате
+              fetchWorkoutDataSequentially(matchingIds);
+          },
+
+          // html код для элементов управления календарем и окна текущей даты
+          plotSelectors: function () {
+              document.querySelector(
+                  ".calendar"
+              ).innerHTML += `
+              <div class="calendar-inner">
+                  <div class="calendar-controls">
+                      <div class="calendar-prev">
+                          <a href="#">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+                                  <path fill="#666" d="M88.2 3.8L35.8 56.23 28 64l7.8 7.78 52.4 52.4 9.78-7.76L45.58 64l52.4-52.4z"/>
+                              </svg>
+                          </a>
+                      </div>
+
+                      <div class="calendar-year-month">
+                          <div class="calendar-month-label"></div>
+                          <div>-</div>
+                          <div class="calendar-year-label"></div>
+                      </div>
+                      
+                      <div class="calendar-next">
+                          <a href="#">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+                                  <path fill="#666" d="M38.8 124.2l52.4-52.42L99 64l-7.77-7.78-52.4-52.4-9.8 7.77L81.44 64 29 116.42z"/>
+                              </svg>
+                          </a>
+                      </div>
+                  </div>
+
+                  <div class="calendar-today-date">Today: 
+                      ${calendarControl.calWeekDays[calendarControl.localDate.getDay()]}, 
+                      ${calendarControl.localDate.getDate()}, 
+                      ${calendarControl.calMonthName[calendarControl.localDate.getMonth()]} 
+                      ${calendarControl.localDate.getFullYear()}
+                  </div>
+                  <div class="calendar-body"></div>
+              </div>
+              `;
+          },
+
+          // html код для названий дней недели
+          plotDayNames: function () {
+              for (let i = 0; i < calendarControl.calWeekDays.length; i++) {
+                  document.querySelector(".calendar .calendar-body").innerHTML += `<div>${calendarControl.calWeekDays[i]}</div>`;
+              }
+          },
+
+          // html код для дат текущего и предыдущего месяца
+          plotDates: function () {
+              document.querySelector(".calendar .calendar-body").innerHTML = ""; // очищает все внутри тела календаря
+              calendarControl.plotDayNames(); // html код для названий дней недели
+              calendarControl.displayMonth(); // отображение текущего месяца в интерфейсе
+              calendarControl.displayYear(); // отображение текущего года в интерфейсе
+              let count = 1;
+              let prevDateCount = 0; // количество отображаемых дней предыдущего месяца
+
+              calendarControl.prevMonthLastDate = calendarControl.getPreviousMonthLastDate(); // последний день предыдущего месяца
+              let prevMonthDatesArray = []; // массив с отображаемыми датами предыдущего месяца
+
+              let calendarDays = calendarControl.daysInMonth(calendar.getMonth() + 1, calendar.getFullYear()); // количество дней в месяце
+
+              // даты текущего месяца
+              for (let i = 1; i < calendarDays; i++) {
+                  // пока день недели не равен дню недели первого дня месяца
+                  if (i < calendarControl.firstDayNumber()) {
+                      prevDateCount += 1; // увеличиваем количество отображаемых дней предыдущего месяца
+                      document.querySelector(
+                          ".calendar .calendar-body"
+                      ).innerHTML += `<div class="prev-dates"></div>`; // html код блока отображаемого дня предыдущего месяца
+                      prevMonthDatesArray.push(calendarControl.prevMonthLastDate--); // добавляем отображаемые даты предыдущего месяца
+                  } else {
+                      // добавляем даты текущего месяца, к каждой подключаем ссылку
+                      document.querySelector(
+                          ".calendar .calendar-body"
+                      ).innerHTML += `
+                          <div class="number-item" data-num=${count}>
+                              <a class="dateNumber" href="#">
+                                  ${count++}
+                              </a>
+                          </div>
+                      `;
+                  }
+              }
+
+              // оставшиеся даты месяца (последняя неполная неделя)
+              for (let j = 0; j < prevDateCount + 1; j++) {
+                  document.querySelector(
+                  ".calendar .calendar-body"
+                  ).innerHTML += `
+                  <div class="number-item" data-num=${count}>
+                      <a class="dateNumber" href="#">
+                          ${count++}
+                      </a>
+                  </div>
+                  `;
+              }
+
+              calendarControl.highlightToday(); // выделение текущей даты
+              calendarControl.highlightWorkouts(); // выделение дней с тренировками
+              calendarControl.plotPrevMonthDates(prevMonthDatesArray); // добавление чисел в блоки дат предыдущего месяца
+              calendarControl.plotNextMonthDates(); // добавление чисел в блоки дат следующего месяца
+          },
+
+          // присоединение обработчиков событий к элементам управления календаря
+          attachEvents: function () {
+              let prevBtn = document.querySelector(".calendar .calendar-prev a"); // ссылка перехода на предыдущий месяц
+              let nextBtn = document.querySelector(".calendar .calendar-next a"); // ссылка перехода на следующий месяц
+              let todayDate = document.querySelector(".calendar .calendar-today-date"); // блок с текущей датой
+              let dateNumber = document.querySelectorAll(".calendar .dateNumber"); // все ссылки дней текущего месяца
+
+              prevBtn.addEventListener("click", calendarControl.navigateToPreviousMonth); // добавление обработчика перехода на предыдущий месяц
+              nextBtn.addEventListener("click", calendarControl.navigateToNextMonth); // добавление обработчика перехода на следующий месяц
+              todayDate.addEventListener("click", calendarControl.navigateToCurrentMonth); // добавление обработчика перехода на текущий месяц
+              for (var i = 0; i < dateNumber.length; i++) {
+                  dateNumber[i].addEventListener("click", calendarControl.selectDate, false); // добавление обработчика выбора даты
+              }
+          },
+
+          // выделение текущей даты
+          highlightToday: function () {
+              let currentMonth = calendarControl.localDate.getMonth() + 1; // текущий месяц
+              let changedMonth = calendar.getMonth() + 1; // отображаемый месяц
+              let currentYear = calendarControl.localDate.getFullYear(); // текущий год
+              let changedYear = calendar.getFullYear(); // отображаемый год
+
+              // если в данный момент отображается текущий год и месяц
+              if (currentYear === changedYear && currentMonth === changedMonth && document.querySelectorAll(".number-item")) {
+                  // текущему числу добавляем класс сегодняшней даты calendar-today
+                  document.querySelectorAll(".number-item")[calendar.getDate() - 1].classList.add("calendar-today");
+              }
+          },
+          
+          // выделение дней с тренировками
+          highlightWorkouts: function () {
+            let changedMonth = calendar.getMonth(); // отображаемый месяц
+            let changedYear = calendar.getFullYear(); // отображаемый год
+
+            let filteredArray = JSON.parse(workoutByDateString).filter(function (item) {
+                return item[2] === Number('<%= current_user.id %>');
+            });
+
+            // Сформировать результирующий массив из значений первого поля
+            let datesArray = filteredArray.map(function (item) {
+                return item[1];
+            });
+
+            // массив дат всех тренировок в виде объектов Date
+            let dates = Array.from(new Set(datesArray)).map(dateString => new Date(dateString));
+            console.log(dates);
+
+            // массив дат всех тренировок в виде объектов Date, которые соответствуют отображаемому месяцу и году
+            let matchingDates = dates.filter((date) => date.getMonth() === changedMonth && date.getFullYear() === changedYear); 
+            console.log(matchingDates);
+
+            // к каждому элементу календаря с соответствующей датой добавляем класс "has-workout"
+            matchingDates.forEach((date) => {
+                document.querySelectorAll(".number-item")[date.getDate() - 1].classList.add("has-workout");
+            });
+          },
+
+          // добавление чисел в блоки дат предыдущего месяца
+          plotPrevMonthDates: function(dates) {
+              dates.reverse(); // разворачиваем массив, т.к. формировали в обратном порядке
+              for (let i = 0; i < dates.length; i++) {
+                  // проверяем, есть ли даты предыдущего месяца
+                  if (document.querySelectorAll(".prev-dates")) {
+                      document.querySelectorAll(".prev-dates")[i].textContent = dates[i]; // добавляем в блок даты предыдущего месяца число
+                  }
+              }
+          },
+
+          // добавление чисел в блоки дат следующего месяца
+          plotNextMonthDates: function() {
+              let childElemCount = document.querySelector('.calendar-body').childElementCount;
+              
+              // 6 недель отображается + 7 названий дней недели
+              if(childElemCount > 42 ) {
+                  let diff = 49 - childElemCount; // количество отображаемых дат следующего месяца
+                  calendarControl.loopThroughNextDays(diff); // html код для дат следующего месяца
+              }
+
+              // 5 недель отображается + 7 названий дней недели
+              if(childElemCount > 35 && childElemCount <= 42 ) {
+              let diff = 42 - childElemCount; // количество отображаемых дат следующего месяца
+              calendarControl.loopThroughNextDays(diff); // html код для дат следующего месяца
+              }
+          },
+
+          // html код для дат следующего месяца
+          loopThroughNextDays: function(count) {
+              if(count > 0) {
+                  for (let i = 1; i <= count; i++) {
+                      document.querySelector('.calendar-body').innerHTML += `<div class="next-dates">${i}</div>`;
+                  }
+              }
+          },
+
+          // перерисовывает календарь и присоединяет обработчики событий после изменения месяца
+          attachEventsOnNextPrev: function () {
+              calendarControl.plotDates(); // html код для дат текущего и предыдущего месяца
+              calendarControl.attachEvents(); // присоединение обработчиков событий к элементам управления календаря
+          },
+
+          // иницилизация календаря
+          init: function () {
+              calendarControl.plotSelectors(); // html код для элементов управления календарем и окна текущей даты
+              calendarControl.plotDates(); // html код для дат текущего и предыдущего месяца
+              calendarControl.attachEvents(); // присоединение обработчиков событий к элементам управления календаря
+
+              // вывод информации о тренировке за сегодня
+              let todaysDate = `${calendar.getFullYear()}-${calendar.getMonth()+1}-${calendar.getDate()}`;
+              console.log(`Тoday's date: ${todaysDate}`);
+              calendarControl.getWorkoutData(todaysDate);
+          }
+      };
+
+      // инициализируем календарь
+      calendarControl.init();
+  }
+
+  // создаем объект календаря
+  CalendarControl();
+</script>

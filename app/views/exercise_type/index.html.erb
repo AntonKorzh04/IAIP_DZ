@@ -1,0 +1,38 @@
+<h1>Мои упражнения</h1>
+
+<div class="col-4">
+  <ul>
+    <% @exercise_types.each do |exercise| %>
+      <li>
+      <div class="my_form">
+        <div class="my_textbox">
+          <div><b><%= exercise.name %></b></div>
+          <div><%= exercise.description %></div>
+        </div>
+
+        <div class="btn-group">
+          <%= button_to 'Изменить', edit_exercise_type_path(exercise), method: :get, class: "btn btn-primary my_horizontal_btn_group" %>
+          <%= button_to 'Удалить', exercise_type_path(exercise), method: :delete, class: "btn btn-danger my_horizontal_btn_group",
+            id: exercise.id %>
+        </div>
+      </div>
+      </li>
+    <% end %>
+  </ul>
+</div>
+
+<script>
+  // все упражнения, используемые в тренировках
+  var exerciseTypesUsed = JSON.parse('<%= raw @exercise_types_used.to_json %>');
+  
+  // id всех упражнений, используемых в тренировках
+  var exerciseTypeIdsUsed = exerciseTypesUsed.map(function(item) {
+    return item.id;
+  });
+
+  // убираем кнопки удаления у всех упражнений, используемых в тренировках
+  exerciseTypeIdsUsed.forEach(id => {
+    document.getElementById(id).style.display = "none";
+  });
+  
+</script>

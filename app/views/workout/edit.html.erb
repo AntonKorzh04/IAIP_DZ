@@ -1,0 +1,354 @@
+<h1>Edit Workout</h1>
+<div class="row" id="row">
+    <div class="col-4">
+        <div class="my_form">
+            <%= form_for @workout, url: workout_path(@workout), method: :patch do |f| %>
+            <div class="form-group">
+                <%= f.text_field :body_weight, class: "form-control", placeholder: "Вес тела" %>
+                <%= f.date_field :date, class: "form-control", placeholder: "Описание" %>
+            </div>
+            <%= f.submit 'Сохранить', id: "submit_button", class: "btn btn-primary" %>
+            <% end %>
+        </div>
+
+        <div id="workout_div" class="my_form"></div>
+    </div>
+
+    <div class="col-4" id="create-exercise">
+        <h3>Добавление упражнения</h3>
+        <%= form_with(model: @exercise, url: exercise_index_path, method: :post, class: "my_form", id: "exercise-create-form") do |form| %>
+            <div class="form-group">
+                <%= form.label :exercise_type_id, 'Тип упражнения' %>
+                <%= form.select :exercise_type_id, @exercise_types, {}, { class: 'form-control' } %>
+            </div>
+
+            <div id="sets-container"></div>
+
+            <%= link_to 'Добавить подход', '#', id: 'add-set-btn', class: 'btn btn-primary' %>
+            <%= link_to 'Удалить', '#', id: 'remove-last-set-btn', class: 'btn btn-danger' %>
+
+            <div class="form-group">
+                <%= form.label :comments, 'Комментарии' %>
+                <%= form.text_area :comments, class: 'form-control', rows: 3 %>
+            </div>
+
+            <%= form.submit 'Сохранить', id: "submit_button", class: "btn btn-primary" %>
+        <% end %>
+    </div>
+
+    <div class="col-4" id="edit-exercise"></div>
+</div>
+
+<script>
+    var setCount = 0;
+    var setsContainer = document.getElementById('sets-container');
+    var addSetBtn = document.getElementById('add-set-btn');
+    var removeLastSetBtn = document.getElementById('remove-last-set-btn');
+    setCount = 0;
+
+    addSetBtn.addEventListener('click', function(event) {
+      event.preventDefault();
+      var newSetForm = document.createElement('div');
+      newSetForm.innerHTML = `
+        <div class="form-group set-group">
+          <label for="_sets_${setCount}_weight">Вес</label>
+          <input class="form-control" type="text" name="sets[${setCount}][weight]">
+
+          <label for="_sets_${setCount}_reps">Количество повторений</label>
+          <input class="form-control" type="text" name="sets[${setCount}][reps]">
+        </div>
+      `;
+
+      setsContainer.appendChild(newSetForm);
+      setCount++;
+    });
+
+    removeLastSetBtn.addEventListener('click', function(event) {
+      event.preventDefault();
+      var lastSet = setsContainer.lastElementChild;
+      if (lastSet) {
+        lastSet.remove();
+        setCount--;
+      }
+    });
+</script>
+
+<script>
+    // получаем форму с данными упражнений по id
+    var exerciseForm = document.getElementById('exercise-create-form');
+
+    exerciseForm.addEventListener('submit', function(event) {
+      event.preventDefault();
+      
+      // получаем все данные из формы
+      var formData = new FormData(exerciseForm);
+
+      // отправка на сервер данных о новом упражнении, обработка exercise_cotroller#create
+      var xhrCreateExercise = new XMLHttpRequest();
+      xhrCreateExercise.open('POST', '<%= exercise_index_path %>', true);
+
+      // только после загрузки первого запроса выполняем остальные действия
+      xhrCreateExercise.onload = function() {
+        // успешное завершение запроса
+        if (xhrCreateExercise.status >= 200 && xhrCreateExercise.status < 300) {
+          console.log('Success');
+          
+          // обновление сделанных за тренировку упражнений
+          refreshWorkout();
+        } else {
+          console.error('Error:', xhrCreateExercise.statusText);
+        }
+      };
+
+      xhrCreateExercise.onerror = function() {
+        console.error('Request failed');
+      };
+
+      xhrCreateExercise.send(formData);
+    });
+
+    function refreshWorkout() {
+      // очищаем форму ввода упражнения
+      var setsContainer = document.getElementById('sets-container');
+      setsContainer.innerHTML = '';
+      var commentsTextArea = document.getElementById('comments');
+      commentsTextArea.value = '';
+      setCount = 0;
+
+      // запрос о сделанных за эту тренировку упражнениях, обработка workout_controller#show
+      var xhrShowWorkout = new XMLHttpRequest();
+      xhrShowWorkout.open('GET', `/workout/${encodeURIComponent('<%= params[:id] %>')}.json`, true);
+
+      xhrShowWorkout.onload = function() {
+        if (xhrShowWorkout.status >= 200 && xhrShowWorkout.status < 300) {
+          var responseData = JSON.parse(xhrShowWorkout.responseText);
+          console.log('Success', responseData);
+
+          // в div с id "workout_div" помещяем данные о сделанных за текущую тренировку упражнениях
+          var workoutDiv = document.getElementById("workout_div");
+          workoutDiv.innerHTML = "";
+
+          // переменная блока для каждого упражнения
+          var currentExerciseDiv;
+          var currentExerciseNameDiv;
+          var currentExerciseButtonGroup;
+
+          // переменные для кнопок изменения и удаления
+          var currentExerciseEditButton;
+          var currentExerciseDeleteButton;
+          
+          // добавляем в workoutDiv блоки currentExerciseDiv с данными о каждом упражнении
+          for (let i = 0; i < responseData.length; i++) {
+            // создаем новый блок для упражнения
+            currentExerciseDiv = document.createElement('div');
+
+            currentExerciseNameDiv = document.createElement('div');
+            currentExerciseNameDiv.classList.add("my_form");
+
+            currentExerciseNameDiv.innerHTML += `
+            <b>Упражнение ${i + 1}: </b>${responseData[i].exercise_type_name}`;
+
+            if (responseData[i].exercise_type_description != '') {
+                currentExerciseNameDiv.innerHTML += ` (${responseData[i].exercise_type_description})`;
+            }
+
+            currentExerciseDiv.appendChild(currentExerciseNameDiv);
+
+            for (let set_number in responseData[i].sets) {
+                let set_data = responseData[i].sets[set_number];
+                currentExerciseDiv.innerHTML += `
+                    <div>Подход ${Number(set_number) + 1}: ${responseData[i].sets[set_number].weight}кг ${responseData[i].sets[set_number].reps}раз</div>`;
+            }
+
+            if (responseData[i].comments != "") {
+                currentExerciseDiv.innerHTML += `
+                <div class="comments">Комментарии: ${responseData[i].comments}</div>
+                `;
+            }
+            
+            // добавление в конце каждого упражнения кнопок изменения и удаления
+            currentExerciseButtonGroup = document.createElement('div');
+            currentExerciseButtonGroup.classList.add("btn-group");
+            currentExerciseButtonGroup.classList.add("my_btn_group");
+            
+            // кнопка изменения
+            currentExerciseButtonGroup.innerHTML += `
+                <form class="button_to" id="edit_exercise_${responseData[i].id}_button" method="get" action="/exercise/${responseData[i].id}/edit">
+                    <button class="btn btn-primary my_horizontal_btn_group" type="submit">Изменить</button>
+                </form>
+            `;
+
+            // кнопка удаления
+            currentExerciseButtonGroup.innerHTML += `
+                <form class="button_to delete_button" id="delete_exercise_${responseData[i].id}" method="post" action="/exercise/${responseData[i].id}">
+                    <button class="btn btn-danger my_horizontal_btn_group" type="submit">Удалить</button>
+                </form>
+            `;
+
+            // в блок упражнения добавляем блок кнопок изменения и удаления
+            currentExerciseDiv.appendChild(currentExerciseButtonGroup);
+
+            // в блок всех упражнений добавляем одно упражнение
+            workoutDiv.appendChild(currentExerciseDiv);
+
+            // обработчик нажатия кнопки изменения
+            currentExerciseEditButton = document.getElementById(`edit_exercise_${responseData[i].id}_button`);
+            currentExerciseEditButton.addEventListener('submit', function(event) {
+              event.preventDefault();
+              console.log(`edit_exercise_${responseData[i].id}_button`);
+              editExerciseAjax(responseData[i].id);
+            });
+
+            // обработчик нажатия кнопки удаления
+            currentExerciseDeleteButton = document.getElementById(`delete_exercise_${responseData[i].id}`);
+            currentExerciseDeleteButton.addEventListener('submit', function(event) {
+              event.preventDefault();
+              console.log(`delete_exercise_${responseData[i].id}`);
+              deleteExerciseAjax(responseData[i].id);
+            });
+          }
+        } else {
+          console.error('Error:', xhrShowWorkout.statusText);
+        }
+      };
+
+      xhrShowWorkout.onerror = function() {
+        console.error('Request failed');
+      };
+
+      xhrShowWorkout.send();
+    };
+
+    function editExerciseAjax(id) {
+      // убираем все кнопки удаления
+      let deleteButtons = document.getElementsByClassName('delete_button');
+      for (let i = 0; i < deleteButtons.length; i++) {
+        deleteButtons[i].style.display = 'none';
+      };
+
+      // убираем блок добавления упражнения
+      document.getElementById('create-exercise').style.display = 'none';
+
+      // ajax запрос на изменение
+      var xhrEditExercise = new XMLHttpRequest();
+      xhrEditExercise.open('GET', `/exercise/${id}/edit`, true);
+
+      // добавление в запрос authenticity_token для корректной обработки запроса
+      xhrEditExercise.setRequestHeader('X-CSRF-Token', $('meta[name="csrf-token"]').attr('content'));
+
+      xhrEditExercise.onload = function() {
+        // успешное завершение запроса
+        if (xhrEditExercise.status >= 200 && xhrEditExercise.status < 300) {
+          console.log('Success');
+
+          // Получаем HTML-текст из ответа
+          var responseHtmlText = xhrEditExercise.responseText;
+
+          // Используем DOMParser для преобразования HTML-текста в документ
+          var parser = new DOMParser();
+          var responseDocument = parser.parseFromString(responseHtmlText, 'text/html');
+
+          var updateExerciseDiv = responseDocument.getElementById('update-exercise');
+          
+          // добавляем в документ форму редактирования упражнения
+          var editExerciseDiv = document.getElementById("edit-exercise");
+          editExerciseDiv.innerHTML = '';
+          editExerciseDiv.appendChild(updateExerciseDiv);
+          
+          // если скрипт уже был на странице, удаляем его
+          var updateSetsControlScript = document.getElementById('update-sets-control-script');
+          if (updateSetsControlScript) {
+            updateSetsControlScript.parentNode.removeChild(updateSetsControlScript);
+          }
+
+          // Создаем новый элемент script
+          var updateSetsControlScript = document.createElement('script');
+          updateSetsControlScript.setAttribute('id', 'update-sets-control-script');
+          updateSetsControlScript.textContent = responseDocument.getElementById("update-sets-control-script").textContent;
+
+          // добавляем в документ скрипт управления подходами в форме изменения упражнения
+          document.body.appendChild(updateSetsControlScript);
+
+          // получаем форму редактирования, которая в данный момент находится на странице
+          var editExerciseForm = document.getElementById(`edit_exercise_${id}`);
+          
+          // при отправке формы удаляем форму и скрипт и вешаем ajax обработчик
+          editExerciseForm.addEventListener('submit', function() {
+            console.log(`form edit_exercise_${id} submitted`);
+
+            // возвращаем блок добавления упражнения
+            document.getElementById('create-exercise').style.display = 'inline';
+
+            // удаляем форму и скрипт
+            editExerciseDiv.removeChild(updateExerciseDiv);
+            document.body.removeChild(updateSetsControlScript);
+
+            event.preventDefault();
+      
+            // получаем все данные из формы
+            var formData = new FormData(editExerciseForm);
+
+            // отправка на сервер данных о новом упражнении, обработка exercise_cotroller#create
+            var xhrPatchExercise = new XMLHttpRequest();
+            xhrPatchExercise.open('PATCH', `/exercise/${id}`, true);
+
+            // только после загрузки первого запроса выполняем остальные действия
+            xhrPatchExercise.onload = function() {
+              // успешное завершение запроса
+              if (xhrPatchExercise.status >= 200 && xhrPatchExercise.status < 300) {
+                console.log('Success update');
+                
+                // обновление сделанных за тренировку упражнений
+                refreshWorkout();
+              } else {
+                console.error('Error:', xhrPatchExercise.statusText);
+              }
+            };
+
+            xhrPatchExercise.onerror = function() {
+              console.error('Request failed');
+            };
+
+            xhrPatchExercise.send(formData);
+          });
+        } else {
+          console.error('Error:', xhrEditExercise.statusText);
+        }
+      };
+
+      xhrEditExercise.onerror = function() {
+        console.error('Request failed');
+      };
+
+      xhrEditExercise.send();
+    };
+
+    function deleteExerciseAjax(id) {
+      // ajax запрос на удаление
+      var xhrDeleteExercise = new XMLHttpRequest();
+      xhrDeleteExercise.open('DELETE', `/exercise/${id}`, true);
+
+      // добавление в запрос authenticity_token для корректной обработки запроса
+      xhrDeleteExercise.setRequestHeader('X-CSRF-Token', $('meta[name="csrf-token"]').attr('content'));
+
+      xhrDeleteExercise.onload = function() {
+        // успешное завершение запроса
+        if (xhrDeleteExercise.status >= 200 && xhrDeleteExercise.status < 300) {
+          console.log('Success');
+          
+          // обновление сделанных за тренировку упражнений
+          refreshWorkout();
+        } else {
+          console.error('Error:', xhrDeleteExercise.statusText);
+        }
+      };
+
+      xhrDeleteExercise.onerror = function() {
+        console.error('Request failed');
+      };
+
+      xhrDeleteExercise.send();
+    };
+
+    refreshWorkout();
+</script>

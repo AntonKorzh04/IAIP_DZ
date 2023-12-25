@@ -1,0 +1,16 @@
+/* Изменение цвета активных элементов навигации */
+.navbar-light .navbar-nav .nav-link.active,
+.navbar-light .navbar-nav .nav-link:hover {
+    background-color: rgb(32, 188, 255);
+    border-radius: 0.375rem;
+}
+
+.navbar-light .navbar-nav .nav-link.active,
+.navbar-light .navbar-nav .nav-item.active {
+    background-color: rgba(32, 188, 255, 0.833);
+    border-radius: 0.375rem;
+}
+
+$primary: rgb(69, 172, 216);
+
+@import "bootstrap";
