@@ -3,10 +3,10 @@ class ExerciseTypeController < ApplicationController
 
     # просмотреть все упражнения данного юзера
     def index
-        @exercise_types = ExerciseType.where(users_id: current_user.id)
+        @exercise_types = ExerciseType.where(user_id: current_user.id)
         
         # все упражнения, используемые в тренировках
-        @exercise_types_used = ExerciseType.where(id: Exercise.pluck(:exercise_types_id).flatten.uniq, users_id: current_user.id)
+        @exercise_types_used = ExerciseType.where(id: Exercise.pluck(:exercise_type_id).flatten.uniq, user_id: current_user.id)
     end
 
     # создание нового типа упражнений
@@ -14,7 +14,7 @@ class ExerciseTypeController < ApplicationController
     end
 
     def create
-        @exercise = ExerciseType.new(name: params[:name], description: params[:description], users_id: current_user.id)
+        @exercise = ExerciseType.new(name: params[:name], description: params[:description], user_id: current_user.id)
         if @exercise.save
             redirect_to exercise_type_index_path, notice: 'Упражнение успешно добавлено!'
         else

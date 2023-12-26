@@ -5,15 +5,15 @@ class WorkoutController < ApplicationController
 
     # просмотреть все тренировки
     def index
-        @workout_by_date_list = Workout.all.pluck(:id, :date, :users_id) # получаю список всех тренировок с id и датой
+        @workout_by_date_list = Workout.all.pluck(:id, :date, :user_id) # получаю список всех тренировок с id и датой
     end
 
     # создание новой тренировки
     def new
-        @workout = Workout.new(users_id: current_user.id, date: Date.today)
+        @workout = Workout.new(user_id: current_user.id, date: Date.today)
         @workout.save
         session[:current_workout_id] = @workout.id
-        @exercise_types = ExerciseType.where(users_id: current_user.id).pluck(:name, :id, :description)
+        @exercise_types = ExerciseType.where(user_id: current_user.id).pluck(:name, :id, :description)
         
         # добавление к названию упражнения описания (при наличии)
         @exercise_types = @exercise_types.map { |arr|
@@ -36,15 +36,15 @@ class WorkoutController < ApplicationController
 
     # просмотр упражнений за данную тренировку
     def show
-        @exercises = Exercise.where(workouts_id: params[:id])
+        @exercises = Exercise.where(workout_id: params[:id])
 
         formatted_exercises = @exercises.map.with_index do |exercise, index|
             {
                 "id" => exercise.id,
                 "created_at" => exercise.created_at,
                 "exercise_number" => index + 1,
-                "exercise_type_name" => ExerciseType.find(exercise.exercise_types_id).name,
-                "exercise_type_description" => ExerciseType.find(exercise.exercise_types_id).description,
+                "exercise_type_name" => ExerciseType.find(exercise.exercise_type_id).name,
+                "exercise_type_description" => ExerciseType.find(exercise.exercise_type_id).description,
                 "sets" => exercise.sets,
                 "comments" => exercise.comments
             }
@@ -61,7 +61,7 @@ class WorkoutController < ApplicationController
     def edit
         @workout = Workout.find(params[:id])
         session[:current_workout_id] = @workout.id
-        @exercise_types = ExerciseType.where(users_id: current_user.id).pluck(:name, :id, :description)
+        @exercise_types = ExerciseType.where(user_id: current_user.id).pluck(:name, :id, :description)
         
         # добавление к названию упражнения описания (при наличии)
         @exercise_types = @exercise_types.map { |arr|
@@ -85,7 +85,7 @@ class WorkoutController < ApplicationController
     # удаление тренировки
     def destroy
         @workout = Workout.find(params[:id])
-        @exercises = Exercise.where(workouts_id: params[:id])
+        @exercises = Exercise.where(workout_id: params[:id])
         @exercises.destroy_all
         @workout.destroy
         redirect_to workout_index_path

@@ -3,8 +3,8 @@
     <div class="my_form">
         <%= form_for @exercise, url: exercise_path(@exercise), method: :patch do |form| %>
             <div class="form-group">
-                <%= form.label :exercise_types_id, 'Тип упражнения' %>
-                <%= form.select :exercise_types_id, @exercise_types, {}, { class: 'form-control' } %>
+                <%= form.label :exercise_type_id, 'Тип упражнения' %>
+                <%= form.select :exercise_type_id, @exercise_types, {}, { class: 'form-control' } %>
             </div>
 
             <div id="update-sets-container"></div>

@@ -6,17 +6,17 @@ class ExerciseController < ApplicationController
 
     # создание нового сделанного упражнения
     def create
-        @exercise = Exercise.new(exercise_types_id: params[:exercise_type_id],
+        @exercise = Exercise.new(exercise_type_id: params[:exercise_type_id],
                                  comments: params[:comments],
                                  sets: params[:sets],
-                                 workouts_id: session[:current_workout_id])
+                                 workout_id: session[:current_workout_id])
         @exercise.save
     end
 
     # изменение упражнения по данному id
     def edit
         @exercise = Exercise.find(params[:id])
-        @exercise_types = ExerciseType.where(users_id: current_user.id).pluck(:name, :id, :description)
+        @exercise_types = ExerciseType.where(user_id: current_user.id).pluck(:name, :id, :description)
 
         # добавление к названию упражнения описания (при наличии)
         @exercise_types = @exercise_types.map { |arr|
@@ -30,7 +30,7 @@ class ExerciseController < ApplicationController
 
     def update
         @exercise = Exercise.find(params[:id])
-        @exercise.update(exercise_types_id: params[:exercise][:exercise_types_id],
+        @exercise.update(exercise_type_id: params[:exercise][:exercise_type_id],
                          comments: params[:exercise][:comments],
                          sets: params[:sets])
     end

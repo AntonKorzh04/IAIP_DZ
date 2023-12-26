@@ -84,3 +84,5 @@ gem 'jquery-rails'
 gem 'rails-ujs'
 
 gem 'jquery-turbolinks'
+
+gem 'shoulda-matchers'

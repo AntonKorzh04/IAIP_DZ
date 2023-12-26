@@ -153,10 +153,17 @@
 
             currentExerciseDiv.appendChild(currentExerciseNameDiv);
 
+            let currentWeight;
             for (let set_number in responseData[i].sets) {
                 let set_data = responseData[i].sets[set_number];
+                
+                if (responseData[i].sets[set_number].weight == "") {
+                    currentWeight = "";
+                } else {
+                    currentWeight = `${responseData[i].sets[set_number].weight} кг`;
+                };
                 currentExerciseDiv.innerHTML += `
-                    <div>Подход ${Number(set_number) + 1}: ${responseData[i].sets[set_number].weight}кг ${responseData[i].sets[set_number].reps}раз</div>`;
+                    <div>Подход ${Number(set_number) + 1}: ${currentWeight} ${responseData[i].sets[set_number].reps} раз</div>`;
             }
 
             if (responseData[i].comments != "") {

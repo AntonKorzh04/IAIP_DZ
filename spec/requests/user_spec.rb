@@ -1,18 +1,24 @@
 require 'rails_helper'
 
-RSpec.describe "Users", type: :request do
-  describe "GET /view_profile" do
+RSpec.describe UserController, type: :controller do
+  let(:user) { create(:user) }
+
+  before do
+    sign_in user
+  end
+
+  describe "GET #view_profile" do
     it "returns http success" do
-      get "/user/view_profile"
+      get :view_profile
       expect(response).to have_http_status(:success)
     end
   end
 
-  describe "GET /new_workout" do
-    it "returns http success" do
-      get "/user/new_workout"
-      expect(response).to have_http_status(:success)
+  describe "GET #get_email" do
+    it "returns user email as JSON" do
+      get :get_email, params: { id: user.id }, format: :json
+      json_response = JSON.parse(response.body)
+      expect(json_response["email"]).to eq(user.email)
     end
   end
-
 end

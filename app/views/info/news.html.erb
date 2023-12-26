@@ -61,7 +61,7 @@
             posts.forEach((post) => {
                 // первый промис автоматически возвращает resolve => выполняется then
                 promiseChain = promiseChain.then(() => {
-                    return fetchWorkoutData(post.workouts_id); // выполняем ajax запрос
+                    return fetchWorkoutData(post.workout_id); // выполняем ajax запрос
                 // дальше ловим resolve и reject промиса, выполняющего ajax запрос
                 }).then((responseData) => {
                     // действия в случае успешного получения данных с сервера
@@ -73,14 +73,14 @@
                     
                     // получаем email текущего юзера (автора поста)
                     var xhrGetEmail = new XMLHttpRequest();
-                    xhrGetEmail.open('GET', `/user/get_email.json?id=${encodeURIComponent(post.users_id)}`, true);
+                    xhrGetEmail.open('GET', `/user/get_email.json?id=${encodeURIComponent(post.user_id)}`, true);
 
                     xhrGetEmail.onload = function() {
                         var currentUserEmail = JSON.parse(xhrGetEmail.responseText);
                         console.log(currentUserEmail);
 
                         workoutDiv.innerHTML += `<h4>${post.date} пользователь ${currentUserEmail.email} поделился результатами
-                        тренировки ${workoutByDateJson[post.workouts_id]}</h4>`;
+                        тренировки ${workoutByDateJson[post.workout_id]}</h4>`;
 
                         // переменная, хранящая упражнение в каждой итерации цикла
                         var currentExerciseDiv;
@@ -121,7 +121,7 @@
                         }
 
                         // кнопка удаления добавляется только для своих постов
-                        if (post.users_id == '<%= current_user.id %>') {
+                        if (post.user_id == '<%= current_user.id %>') {
                             // добавление в конце каждой тренировки кнопок изменения и удаления
                             currentWorkoutButtonGroup = document.createElement('div');
                             currentWorkoutButtonGroup.classList.add("btn-group");

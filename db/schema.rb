@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_25_170511) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_26_092541) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -19,29 +19,29 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_25_170511) do
     t.string "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "users_id"
-    t.index ["users_id"], name: "index_exercise_types_on_users_id"
+    t.bigint "user_id"
+    t.index ["user_id"], name: "index_exercise_types_on_user_id"
   end
 
   create_table "exercises", force: :cascade do |t|
     t.string "comments"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "exercise_types_id"
-    t.bigint "workouts_id"
+    t.bigint "exercise_type_id"
+    t.bigint "workout_id"
     t.jsonb "sets"
-    t.index ["exercise_types_id"], name: "index_exercises_on_exercise_types_id"
-    t.index ["workouts_id"], name: "index_exercises_on_workouts_id"
+    t.index ["exercise_type_id"], name: "index_exercises_on_exercise_type_id"
+    t.index ["workout_id"], name: "index_exercises_on_workout_id"
   end
 
   create_table "posts", force: :cascade do |t|
     t.date "date"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "users_id"
-    t.bigint "workouts_id"
-    t.index ["users_id"], name: "index_posts_on_users_id"
-    t.index ["workouts_id"], name: "index_posts_on_workouts_id"
+    t.bigint "user_id"
+    t.bigint "workout_id"
+    t.index ["user_id"], name: "index_posts_on_user_id"
+    t.index ["workout_id"], name: "index_posts_on_workout_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -61,14 +61,14 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_25_170511) do
     t.integer "body_weight"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "users_id"
-    t.index ["users_id"], name: "index_workouts_on_users_id"
+    t.bigint "user_id"
+    t.index ["user_id"], name: "index_workouts_on_user_id"
   end
 
-  add_foreign_key "exercise_types", "users", column: "users_id"
-  add_foreign_key "exercises", "exercise_types", column: "exercise_types_id"
-  add_foreign_key "exercises", "workouts", column: "workouts_id"
-  add_foreign_key "posts", "users", column: "users_id"
-  add_foreign_key "posts", "workouts", column: "workouts_id"
-  add_foreign_key "workouts", "users", column: "users_id"
+  add_foreign_key "exercise_types", "users"
+  add_foreign_key "exercises", "exercise_types"
+  add_foreign_key "exercises", "workouts"
+  add_foreign_key "posts", "users"
+  add_foreign_key "posts", "workouts"
+  add_foreign_key "workouts", "users"
 end

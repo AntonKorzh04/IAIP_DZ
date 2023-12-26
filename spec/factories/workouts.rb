@@ -1,6 +1,8 @@
 FactoryBot.define do
-  factory :workout do
-    date { "2023-12-20" }
-    body_weight { 1 }
-  end
+    factory :workout do
+        association :user
+        
+        date { Date.today }
+        body_weight { 80 }
+    end
 end
