@@ -1,7 +1,7 @@
 <h1>Новая тренировка</h1>
 
 <div class="row" id="row">
-    <div class="col-4">
+    <div class="col-lg-4 col-12 mb-4">
         <%= form_tag(workout_index_path, {method: "post", class: "my_form", id: "workout_form"}) do %>
             <div class="form-group">
                 <%= text_field_tag (:body_weight),"", class: "form-control", placeholder: "Вес тела" %>
@@ -13,7 +13,7 @@
         <div id="workout_div" class="my_form"></div>
     </div>
 
-    <div class="col-4" id="create-exercise">
+    <div class="col-lg-4 col-12 mb-4" id="create-exercise">
         <h3>Добавление упражнения</h3>
         <%= form_with(model: @exercise, url: exercise_index_path, method: :post, class: "my_form", id: "exercise-create-form") do |form| %>
             <div class="form-group">
@@ -35,7 +35,7 @@
         <% end %>
     </div>
 
-    <div class="col-4" id="edit-exercise"></div>
+    <div class="col-lg-4 col-12 mb-4" id="edit-exercise"></div>
 </div>
 
 <script>

@@ -1,8 +1,8 @@
 <h1>Моя страница</h1>
 
-<div class="col-4">
+<div class="col-lg-4 col-12 mb-4">
     <div class="my_form">  
-        <div>Мой аккаунт: <%= current_user.email %></div>
+        <div id="account-name">Мой аккаунт: <%= current_user.email %></div>
         <div>Дата регистрации: <%= current_user.created_at %></div>
     </div>
 

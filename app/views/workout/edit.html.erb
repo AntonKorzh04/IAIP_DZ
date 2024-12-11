@@ -1,6 +1,6 @@
-<h1>Edit Workout</h1>
+<h1>Изменить тренировку</h1>
 <div class="row" id="row">
-    <div class="col-4">
+    <div class="col-lg-4 col-12 mb-4">
         <div class="my_form">
             <%= form_for @workout, url: workout_path(@workout), method: :patch do |f| %>
             <div class="form-group">
@@ -14,7 +14,7 @@
         <div id="workout_div" class="my_form"></div>
     </div>
 
-    <div class="col-4" id="create-exercise">
+    <div class="col-lg-4 col-12 mb-4" id="create-exercise">
         <h3>Добавление упражнения</h3>
         <%= form_with(model: @exercise, url: exercise_index_path, method: :post, class: "my_form", id: "exercise-create-form") do |form| %>
             <div class="form-group">
@@ -36,7 +36,7 @@
         <% end %>
     </div>
 
-    <div class="col-4" id="edit-exercise"></div>
+    <div class="col-lg-4 col-12 mb-4" id="edit-exercise"></div>
 </div>
 
 <script>
