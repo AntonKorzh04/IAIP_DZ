@@ -12,9 +12,13 @@
           <%= link_to 'Моя страница', root_path, class: 'nav-link' %>
         </li>
 
-        <li class="nav-item <%= 'active' if current_page?(info_news_path) %>">
+        <%
+=begin%>
+ <li class="nav-item <%= 'active' if current_page?(info_news_path) %>">
           <%= link_to 'Новости', info_news_path, class: 'nav-link' %>
-        </li>
+        </li> 
+<%
+=end%>
         
         <li class="nav-item <%= 'active' if current_page?(new_exercise_type_path) %>">
           <%= link_to 'Новое упражнение', new_exercise_type_path, class: 'nav-link' %>
