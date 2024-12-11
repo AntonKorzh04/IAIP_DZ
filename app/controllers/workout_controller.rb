@@ -5,7 +5,8 @@ class WorkoutController < ApplicationController
 
     # просмотреть все тренировки
     def index
-        @workout_by_date_list = Workout.all.pluck(:id, :date, :user_id) # получаю список всех тренировок с id и датой
+        # получаю список всех тренировок с id и датой для текущего юзера
+        @workout_by_date_list = Workout.where(user_id: current_user.id).pluck(:id, :date, :user_id)
     end
 
     # создание новой тренировки
@@ -57,21 +58,26 @@ class WorkoutController < ApplicationController
         end
     end
 
-    # изменение тренировки по данному id
     def edit
-        @workout = Workout.find(params[:id])
-        session[:current_workout_id] = @workout.id
-        @exercise_types = ExerciseType.where(user_id: current_user.id).pluck(:name, :id, :description)
-        
-        # добавление к названию упражнения описания (при наличии)
-        @exercise_types = @exercise_types.map { |arr|
+        @workout = current_user.workouts.find_by(id: params[:id]) # Поиск тренировки только среди тренировок текущего пользователя
+      
+        if @workout
+          session[:current_workout_id] = @workout.id
+          @exercise_types = ExerciseType.where(user_id: current_user.id).pluck(:name, :id, :description)
+          
+          # добавление к названию упражнения описания (при наличии)
+          @exercise_types = @exercise_types.map do |arr|
             if arr[2].empty?
-                [arr[0].to_s, arr[1]]
+              [arr[0].to_s, arr[1]]
             else
-                ["#{arr[0]} (#{arr[2]})", arr[1]]
+              ["#{arr[0]} (#{arr[2]})", arr[1]]
             end
-        }
-    end
+          end
+        else
+          # Если тренировка не найдена или принадлежит другому пользователю
+          redirect_to workout_index_path, alert: "У вас нет прав для редактирования этой тренировки."
+        end
+      end
 
     def update
         @workout = Workout.find(params[:id])
