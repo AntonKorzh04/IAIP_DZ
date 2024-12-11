@@ -1,6 +1,6 @@
-<h1>Log in</h1>
+<h1>Войти</h1>
 
-<div class="col-4">
+<div class="col-lg-4 col-12 mb-4">
   <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
     <div class="my_form">
       <div class="form-group">
@@ -13,14 +13,15 @@
         </div>
 
         <% if devise_mapping.rememberable? %>
-          <div class="field">
-            <%= f.check_box :remember_me, class: "form-check-input" %>
-            <%= f.label :remember_me, class: "form-check-label" %>
+          <div class="form-group form-check">
+            <%= f.check_box :remember_me, class: "form-check-input", id: "remember_me" %>
+            <%= f.label :remember_me, "Запомнить меня", class: "form-check-label" %>
           </div>
         <% end %>
 
+
         <div class="actions">
-          <%= f.submit "Log in", class: "btn btn-primary btn_submit" %>
+          <%= f.submit "Войти", class: "btn btn-primary btn_submit" %>
         </div>
       </div>
     </div>

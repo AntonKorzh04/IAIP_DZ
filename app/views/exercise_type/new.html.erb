@@ -1,6 +1,6 @@
 <h1>Новое упражнение</h1>
 
-<div class="col-4">
+<div class="col-lg-4 col-12 mb-4">
     <%= form_tag(exercise_type_index_path, {method: "post", class: "my_form", id: "my_form"}) do %>
         <div class="form-group">
             <%= text_field_tag (:name),"", class: "form-control", placeholder: "Название" %>
